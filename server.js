@@ -6,6 +6,8 @@ var users = require("./users.js");
 var actions = require("./actions.js");
 var game = require("./game.js");
 
+var chalk = require('chalk');
+
 // -----------------------------------------------------------------------------
 // Configuration Variables
 //------------------------------------------------------------------------------
@@ -13,8 +15,24 @@ var Config = {
   port: 8080,
   worldWidth: 200,
   worldHeight: 50,
-  updateInterval: 5,
-  verbose: true
+  updateInterval: 2,
+  verbose: true,
+  floorLevel: 5,
+  initialFood: 150,
+  initialWood: 150,
+  initialHouses: 3,
+  foodConsumptionPerTurn: 2,
+  energyConsumptionPerTurn: 0.3,
+  initialGoats: 20,
+  initialTrees: 20,
+  houseBuildingCost: 50,
+  houseRoomsAmount: 5,
+  baseWoodCollection: 25,
+  baseFoodCollection: 50,
+  woodCollectionDamage: 1,
+  foodCollectionDamage: 10,
+  manSpawnCost: 25,
+  foodEnergyConversionCoefficient: 1.5
 };
 
 //------------------------------------------------------------------------------
@@ -30,8 +48,10 @@ function chState(theWorld) {
   return JSON.stringify({world: theWorld});
 }
 
-function chLogin() {
-  var userid = users.addUser();
+function chLogin(req) {
+  var queryData = url.parse(req.url, true).query;
+  var userid = users.addUser(queryData.username);
+  console.log(chalk.green("Hello new user " + queryData.username));
   return JSON.stringify({userid: userid});
 }
 
@@ -44,11 +64,21 @@ function chAction(req, theGame) {
       queryData.agentID,
       queryData.direction
     );
-  } else if (queryData.actionID === actions.ActionsType.COLECT) {
-    newAction = actions.Collect(
+  } else if (parseInt(queryData.actionID) === actions.ActionsType.COLLECT) {
+    newAction = actions.CollectAction(
       queryData.userID,
       queryData.agentID,
       queryData.targetID
+    );
+  } else if (parseInt(queryData.actionID) === actions.ActionsType.SPAWN) {
+    newAction = actions.SpawnAction(
+      queryData.userID,
+      queryData.agentID
+    );
+  } else if (parseInt(queryData.actionID) === actions.ActionsType.BUILD) {
+    newAction = actions.BuildAction(
+      queryData.userID,
+      queryData.agentID
     );
   }
   if (Config.verbose)
@@ -85,10 +115,10 @@ function timeLeft(timeout) {
         res.write("done");
         break;
       case "/login":
-        res.write(chLogin());
+        res.write(chLogin(req));
         break;
       case "/userlist":
-        res.write(chLogin());
+        res.write(JSON.stringify({users: users.usersList}));
         break;
       case "/state":
         res.write(chState(theWorld));
@@ -99,6 +129,8 @@ function timeLeft(timeout) {
       case "/timeout":
         res.write(JSON.stringify({actions: timeLeft(timeout)}));
         break;
+      case "/lastactions":
+        res.write(JSON.stringify({lastactions: timeLeft(timeout)}));
       default:
         res.write("Error");
     }

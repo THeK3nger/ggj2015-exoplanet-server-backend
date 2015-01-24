@@ -1,6 +1,6 @@
 "use strict";
 
-var usersList = {prova: 111};
+var usersList = {};
 
 function makeid() {
   var text = "";
@@ -12,11 +12,16 @@ function makeid() {
   return text;
 }
 
-function addUser() {
+function addUser(username) {
   var userId = makeid();
-  usersList[userId] = Date.now();
+  usersList[userId] = {username: username, time: Date.now()};
   return userId;
 }
 
+function userExists(userID) {
+  return userID in usersList;
+}
+
+module.exports.userExists = userExists;
 module.exports.usersList = usersList;
 module.exports.addUser = addUser;
