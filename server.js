@@ -3,7 +3,7 @@
 var http = require("http");
 var url = require("url");
 var users = require("./users.js");
-//var world = require("./world.js");
+
 var game = require("./game.js");
 
 // -----------------------------------------------------------------------------
@@ -12,7 +12,8 @@ var game = require("./game.js");
 var Config = {
   port: 8080,
   worldWidth: 10,
-  worldHeight: 10
+  worldHeight: 10,
+  updateInterval: 5,
 };
 
 //------------------------------------------------------------------------------
@@ -36,6 +37,10 @@ function chLogin() {
   return JSON.stringify({userid: userid});
 }
 
+function timeLeft(timeout) {
+  return (timeout._idleStart + timeout._idleTimeout - Date.now()) / 1000;
+}
+
 // -----------------------------------------------------------------------------
 // Main
 //------------------------------------------------------------------------------
@@ -46,6 +51,9 @@ function chLogin() {
 
   // Direct Access to TheWorld! [TODO: Remove?]
   var theWorld = theGame.theWorld;
+
+  // Start the game Main Loop.
+  var timeout = setInterval(theGame.computeNextState, Config.updateInterval*1000);
 
   http.createServer(function (req, res) {
     res.writeHead(200, {"Content-Type": "text/html"});
@@ -68,6 +76,9 @@ function chLogin() {
     }
     else if( url.parse(req.url).pathname === "/actions" ){
       res.write(JSON.stringify({actions: actions}));
+    }
+    else if( url.parse(req.url).pathname === "/timeout" ){
+      res.write(JSON.stringify({actions: timeLeft(timeout)}));
     }
     else if( url.parse(req.url).pathname === "/tick" ){
       for(var action in actions){
@@ -95,8 +106,6 @@ function chLogin() {
     res.end();
 
   }).listen(Config.port);
-
-  setInterval(theGame.computeNextState, 2*1000);
 
   console.log("Server listening on port " + Config.port);
 })();
