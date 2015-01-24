@@ -1,0 +1,11 @@
+{
+  "name": "ggj2105-backend",
+  "description": "Network backend for Noctua's GGJ2015 entry.",
+  "author": "Davide Aversa <thek3nger@gmail.com>",
+  "dependencies": {
+    "chalk": "0.x.x"
+  },
+  "devDependencies": {
+  },
+  "engine": "node >= 0.4.1"
+}
