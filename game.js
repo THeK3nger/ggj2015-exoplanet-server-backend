@@ -94,11 +94,11 @@ var CreateGame = function(config) {
     // Empty Buffer
     actionBuffer = [];
     if (!theWorld.alive && !logged) {
-      ancientWorlds.worlds.push(theWorld.statistics);
-      var strJson = JSON.stringify(ancientWorlds);
-      fs.writeFileSync("ancientworlds.json", strJson);
       logged = true;
       setTimeout(function() {
+        ancientWorlds.worlds.push(theWorld.statistics);
+        var strJson = JSON.stringify(ancientWorlds);
+        fs.writeFileSync("ancientworlds.json", strJson);
         process.exit();
       }, 5*1000);
     }
