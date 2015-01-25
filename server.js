@@ -139,6 +139,12 @@ function timeLeft(timeout) {
       case "/history":
         res.write(JSON.stringify(theGame.ancientWorlds));
         break;
+      case "/howmanylives":
+        var totalAlive = theGame.ancientWorlds.worlds.reduce(function(prev, current) {
+          return prev + parseInt(current.maxpopulation);
+        },0);
+        res.write(totalAlive.toString());
+        break;
       case "/crossdomain.xml":
         res.write('<?xml version="1.0"?><cross-domain-policy><allow-access-from domain="*"/></cross-domain-policy>');
         break;
