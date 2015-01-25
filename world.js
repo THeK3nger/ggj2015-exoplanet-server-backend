@@ -26,7 +26,7 @@ var linearWorld = function(width, height) {
   for (var i = 0; i < width; i++) {
     world_brutto[i] = new Array(height);
     for(var j =0;j<height;j++){
-      if (i < 98 && j <= 4) {
+      if ((i < 25 && j <= 4) || (i > 125 && j<=4)) {
         world_brutto[i][j]="3";
       } else if (j<4) {
         world_brutto[i][j]="1";
@@ -128,6 +128,11 @@ function World(width, height, config) {
       houses: config.initialHouses
     }
   };
+  this.statistics = {
+    maxpopulation: 0,
+    maxfood: config.initialFood,
+    maxwood: config.initialWood
+  }
   this.alive = true;
 
   this.randomDynamics = function() {
@@ -216,6 +221,11 @@ function World(width, height, config) {
     this.agents.push(
       CreateMan({x: agent.position.x+1, y: agent.position.y})
     );
+
+    var mAlive = this.countMenAlive();
+    if (mAlive > this.statistics.maxpopulation) {
+      this.statistics.maxpopulation = mAlive;
+    }
   };
 
   this.handleBuildAction = function(agent, action) {
@@ -271,6 +281,9 @@ function World(width, height, config) {
       case AgentType.TREE:
         agent.man.health -= config.woodCollectionDamage;
         this.gamestate.resources.wood += config.baseWoodCollection;
+        if (this.gamestate.resources.wood > this.statistics.maxwood) {
+          this.statistics.maxwood = this.gamestate.resources.wood;
+        }
         var index = this.dinamics.indexOf(agentpos);
         if (index > -1) {
           this.dinamics.splice(index, 1);
@@ -278,6 +291,9 @@ function World(width, height, config) {
         break;
       case AgentType.GOAT:
         this.gamestate.resources.food += config.baseFoodCollection;
+        if (this.gamestate.resources.food > this.statistics.maxfood) {
+          this.statistics.maxfood = this.gamestate.resources.food;
+        }
         agent.man.health -= config.foodCollectionDamage;
         var index = this.dinamics.indexOf(agentpos);
         if (index > -1) {
@@ -327,7 +343,7 @@ function World(width, height, config) {
   };
 
   this.isWorldAlive = function() {
-    return this.countMenAlive() > 0 || this.gamestate.food >= config.manSpawnCost;
+    return this.countMenAlive() > 0 || this.gamestate.resources.food >= config.manSpawnCost;
   };
 
   this.asteroidExplosion = function(asteroid) {

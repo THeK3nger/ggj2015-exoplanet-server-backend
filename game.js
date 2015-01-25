@@ -4,6 +4,7 @@ var world = require("./world.js");
 var users = require("./users.js");
 
 var chalk = require('chalk');
+var fs = require("fs");
 
 var CreateGame = function(config) {
 
@@ -12,6 +13,10 @@ var CreateGame = function(config) {
   var actionBuffer = [];
 
   var lastActions = {};
+
+  var ancientWorlds = JSON.parse(fs.readFileSync('./ancientworlds.json', 'utf8'));
+
+  var logged = false;
 
   var usersActions = function(userID) {
     return actionBuffer.filter(
@@ -88,13 +93,20 @@ var CreateGame = function(config) {
     console.log(JSON.stringify(choosenActions));
     // Empty Buffer
     actionBuffer = [];
+    if (!theWorld.alive && !logged) {
+      ancientWorlds.worlds.push(theWorld.statistics);
+      var strJson = JSON.stringify(ancientWorlds);
+      fs.writeFileSync("ancientworlds.json", strJson);
+      logged = true;
+    }
   };
 
   return {
     theWorld: theWorld,
     computeNextState: computeNextState,
     proposeAction: proposeAction,
-    lastActions: lastActions
+    lastActions: lastActions,
+    ancientWorlds: ancientWorlds
   };
 
 }

@@ -32,7 +32,11 @@ function frasariulum() {
     "Every now and then, %1$s say something cool",
     "My precioussss! Me and %1$s will never let you go!",
     "I can see my master %1$s",
-    "Lavalicius"];
+    "Lavalicius",
+    "%1$s, is that you?",
+    "Get away from my head!",
+    "I like %1$s and I cannot lie",
+    "I must obey to %1$s"];
   var listOfUsernames = []
   for (var key in usersList) {
     if (usersList.hasOwnProperty(key)) {

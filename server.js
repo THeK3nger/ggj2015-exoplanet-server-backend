@@ -13,7 +13,7 @@ var chalk = require('chalk');
 //------------------------------------------------------------------------------
 var Config = {
   port: 8080,
-  worldWidth: 200,
+  worldWidth: 150,
   worldHeight: 50,
   updateInterval: 2,
   verbose: true,
@@ -22,7 +22,7 @@ var Config = {
   initialWood: 150,
   initialHouses: 2,
   foodConsumptionPerTurn: 2,
-  energyConsumptionPerTurn: 0.3,
+  energyConsumptionPerTurn: 20.3,
   initialGoats: 20,
   initialTrees: 20,
   houseBuildingCost: 50,
@@ -33,7 +33,7 @@ var Config = {
   foodCollectionDamage: 10,
   manSpawnCost: 25,
   foodEnergyConversionCoefficient: 1.5,
-  asteroidProbability: 0.9
+  asteroidProbability: 0.05
 };
 
 //------------------------------------------------------------------------------
@@ -135,6 +135,9 @@ function timeLeft(timeout) {
         break;
       case "/frasariulum":
         res.write(users.frasariulum());
+        break;
+      case "/history":
+        res.write(JSON.stringify(theGame.ancientWorlds));
         break;
       default:
         res.write("Error");
