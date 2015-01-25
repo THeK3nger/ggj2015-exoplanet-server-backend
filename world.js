@@ -48,7 +48,9 @@ var AgentType = Object.freeze({
   WOODPILE: 2,
   HOUSE: 3,
   TREE: 4,
-  GOAT: 5
+  GOAT: 5,
+  ASTEROID: 6,
+  FIRE: 7
 });
 
 var StaticType = Object.freeze({
@@ -84,6 +86,19 @@ function CreateDynamic(position, type) {
     id: idCounter.toString(),
     type: type,
     position: position
+  };
+}
+
+function CreateFire(position) {
+  // Defaults
+  position = position || {x: 0, y: 0}
+  // --
+  idCounter++;
+  return {
+    id: idCounter.toString(),
+    type: AgentType.FIRE,
+    position: position,
+    life: 3
   };
 }
 
@@ -173,6 +188,15 @@ function World(width, height, config) {
       console.log(chalk.red("DEAD"));
       agent.man.health = 0;
     }
+    // Check if man is on fire.
+    var onFire = this.dinamics.some(function(item) {
+      return item.type === AgentType.FIRE && item.position.x === agent.position.x;
+    });
+    if (onFire) {
+      console.log(chalk.red("DEAD"));
+      agent.man.health = 0;
+    }
+
   };
 
   this.handleSpawnAction = function(agent, action) {
@@ -197,19 +221,24 @@ function World(width, height, config) {
   this.handleBuildAction = function(agent, action) {
     // PRECONDITIONS:
     if (agent.type !== AgentType.MAN) {
-      console.log(chalk.red("[ERROR] Invalid Action"));
+      console.log(chalk.red("[ERROR] Invalid Action: Agent not a Real Man."));
       return;
     }
-    var occupied = this.agents.some(function(item) {
+    var occupied1 = this.agents.some(function(item) {
+      return item.position.x === agent.position.x && item.position.y === agent.position.y && item.id !== agent.id;
+    });
+
+    var occupied2 = this.dinamics.some(function(item) {
       return item.position.x === agent.position.x && item.position.y === agent.position.y;
     });
 
-    occupied = occupied || this.dinamics.some(function(item) {
-      return item.position.x === agent.position.x && item.position.y === agent.position.y;
-    });
+    if (occupied1 || occupied2) {
+      console.log(chalk.red("[ERROR] Invalid Action: Occupied"));
+      return;
+    }
 
-    if (occupied || this.gamestate.resources.wood < config.houseBuildingCost) {
-      console.log(chalk.red("[ERROR] Invalid Action"));
+    if (this.gamestate.resources.wood < config.houseBuildingCost) {
+      console.log(chalk.red("[ERROR] Invalid Action: Not Enough Resources"));
       return;
     }
 
@@ -230,7 +259,7 @@ function World(width, height, config) {
     }
 
     var agentpos = this.dinamics.filter(function(item) {
-      return item.position.x === agent.position.x && item.position.y === agent.position.y;
+      return item.position.x === agent.position.x && item.position.y === agent.position.y && (item.type === AgentType.TREE || item.type === AgentType.GOAT);
     }).pop();
 
     if (typeof agentpos === 'undefined') {
@@ -262,47 +291,28 @@ function World(width, height, config) {
 
   // BIG BIG BAD BOY
   this.applyAction = function(action) {
-    var agent = this.agents.filter(function(item) {
-      return item.id === action.agentID;
-    }).pop();
-    var actionType = action.actionID;
-    switch (actionType) {
-      case actions.ActionsType.MOVE:
-        this.handleMoveAction(agent, action);
-        break;
-      case actions.ActionsType.COLLECT:
-        handleCollectAction(agent, action);
-        break;
-      case actions.ActionsType.SPAWN:
-        this.handleSpawnAction(agent, action);
-        break;
-      case actions.ActionType.BUILD:
-        this.handleBuildAction(agent, action);
-        break;
-      default:
-        console.log(chalk.red("[ERROR] Unkown Action Type."));
-    }
-  };
-
-  // BIG BIG BAD BOY
-  this.applyAction = function(action) {
-    var agent = this.agents.filter(function(item) {
-      return item.id === action.agentID;
-    }).pop();
-    var actionType = action.actionID;
-    switch (actionType) {
-      case actions.ActionsType.MOVE:
-        this.handleMoveAction(agent, action);
-        break;
-      case actions.ActionsType.COLLECT:
-        this.handleCollectAction(agent, action);
-        break;
-      case actions.ActionsType.SPAWN:
-        this.handleSpawnAction(agent, action);
-        break;
-      default:
-        console.log(chalk.red("[ERROR] Unkown Action Type."));
+    if (this.alive) {
+      var agent = this.agents.filter(function(item) {
+        return item.id === action.agentID;
+      }).pop();
+      var actionType = action.actionID;
+      switch (actionType) {
+        case actions.ActionsType.MOVE:
+          this.handleMoveAction(agent, action);
+          break;
+        case actions.ActionsType.COLLECT:
+          this.handleCollectAction(agent, action);
+          break;
+        case actions.ActionsType.SPAWN:
+          this.handleSpawnAction(agent, action);
+          break;
+        case actions.ActionsType.BUILD:
+          this.handleBuildAction(agent, action);
+          break;
+        default:
+          console.log(chalk.red("[ERROR] Unkown Action Type: "+ actionType));
       }
+    }
   };
 
   var isAlive = function(agent) {
@@ -319,6 +329,51 @@ function World(width, height, config) {
   this.isWorldAlive = function() {
     return this.countMenAlive() > 0 || this.gamestate.food >= config.manSpawnCost;
   };
+
+  this.asteroidExplosion = function(asteroid) {
+    var killedAgents = this.agents.filter(function(item) {
+      return item.position.x == asteroid.position.x ||
+        item.position.x == asteroid.position.x+1 ||
+        item.position.x == asteroid.position.x-1
+    });
+    var killedDynamics = this.dinamics.filter(function(item) {
+      return item.position.x == asteroid.position.x ||
+      item.position.x == asteroid.position.x+1 ||
+      item.position.x == asteroid.position.x-1
+    });
+    for (var i=0; i<killedAgents.length; i++) {
+      if (killedAgents[i].type === AgentType.MAN) {
+        killedAgents[i].man.health = 0;
+      }
+    }
+
+    for (var i=0; i<killedDynamics.length; i++) {
+      if (killedDynamics[i].type === AgentType.HOUSE) {
+        this.gamestate.resources.houses -= 1;
+      }
+      var index = this.dinamics.indexOf(killedDynamics[i]);
+      if (index > -1) {
+        this.dinamics.splice(index, 1);
+      }
+    }
+
+    // SPAWN FIRE
+    this.dinamics.push(
+      CreateFire({x: asteroid.position.x, y: asteroid.position.y})
+    );
+    this.dinamics.push(
+      CreateFire({x: asteroid.position.x+1, y: asteroid.position.y})
+    );
+    this.dinamics.push(
+      CreateFire({x: asteroid.position.x-1, y: asteroid.position.y})
+    );
+
+    //DELETE ASTEROID
+    var index = this.dinamics.indexOf(asteroid);
+    if (index > -1) {
+      this.dinamics.splice(index, 1);
+    }
+  }
 
   this.worldEvolution = function() {
     if (this.alive) {
@@ -359,10 +414,96 @@ function World(width, height, config) {
         }
       });
 
+      // Spawn Dinamics
+      if (Math.random() < 0.1) {
+        var resources = this.dinamics.filter(function(item) {
+          return item.type === AgentType.GOAT || item.type === AgentType.TREE;
+        });
+        var randomResources = resources[Math.floor(Math.random() * resources.length)];
+        if (this.isFree({x: randomResources.position.x+1, y: randomResources.position.y})) {
+          this.dinamics.push(
+            CreateDynamic({x: randomResources.position.x+1, y: randomResources.position.y}, randomResources.type)
+          );
+        } else if (this.isFree({x: randomResources.position.x-1, y: randomResources.position.y})) {
+          this.dinamics.push(
+            CreateDynamic({x: randomResources.position.x-1, y: randomResources.position.y}, randomResources.type)
+          );
+        }
+      }
+
+      // Asteroids
+      if (Math.random() < config.asteroidProbability) {
+        var randomX = Math.floor(Math.random() * this.width);
+        this.dinamics.push(
+          CreateDynamic({x: randomX, y: config.floorLevel+10}, AgentType.ASTEROID)
+        );
+      }
+
+      // Move Asteroids
+      var asteroids = this.dinamics.filter(function(item) {
+        return item.type === AgentType.ASTEROID;
+      });
+
+      for (var i=0;i<asteroids.length;i++) {
+        asteroids[i].position.y-=1;
+        if (asteroids[i].position.y == config.floorLevel) {
+          this.asteroidExplosion(asteroids[i]);
+        }
+      }
+
+      // Delete Fire after time
+      var fire = this.dinamics.filter(function(item) {
+        return item.type === AgentType.FIRE;
+      });
+
+      for (var i=0;i<fire.length;i++) {
+        fire[i].life -= 1;
+        if (fire[i].life === 0) {
+          var index = this.dinamics.indexOf(fire[i]);
+          if (index > -1) {
+            this.dinamics.splice(index, 1);
+          }
+        }
+      }
+
+      // Move Goats
+      var goats = this.dinamics.filter(function(item) {
+        return item.type === AgentType.GOAT;
+      });
+      for (var i=0;i<goats.length;i++) {
+        if (Math.random() < 0.3) {
+          if (Math.random() < 0.5) {
+            goats[i].position.x += 1;
+            if (goats[i].position.x >= this.width)  goats[i].position.x = this.width-1;
+          } else {
+            goats[i].position.x -= 1;
+            if (goats[i].position.x < 0)  goats[i].position.x = 0;
+          }
+        }
+        //TODO: Check State for collision/hazards/merda varia.
+        if (this.statics[goats[i].position.x][goats[i].position.y-1] === StaticType.LAVA.toString()) {
+          var index = this.dinamics.indexOf(goats[i]);
+          if (index > -1) {
+            this.dinamics.splice(index, 1);
+          }
+        }
+        // Check if man is on fire.
+        var onFire = this.dinamics.some(function(item) {
+          return item.type === AgentType.FIRE && item.position.x === goats[i].position.x;
+        });
+        if (onFire) {
+          var index = this.dinamics.indexOf(goats[i]);
+          if (index > -1) {
+            this.dinamics.splice(index, 1);
+          }
+        }
+      }
+
       if (!this.isWorldAlive()) {
         this.alive = false;
         console.log(chalk.red("THE WORLD IS EXTINCT"));
       }
+
     }
   }
 

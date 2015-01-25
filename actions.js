@@ -42,3 +42,4 @@ module.exports.ActionsType = ActionsType;
 module.exports.MoveAction = MoveAction;
 module.exports.CollectAction = CollectAction;
 module.exports.SpawnAction = SpawnAction;
+module.exports.BuildAction = BuildAction;

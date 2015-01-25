@@ -20,19 +20,20 @@ var Config = {
   floorLevel: 5,
   initialFood: 150,
   initialWood: 150,
-  initialHouses: 3,
+  initialHouses: 2,
   foodConsumptionPerTurn: 2,
   energyConsumptionPerTurn: 0.3,
   initialGoats: 20,
   initialTrees: 20,
   houseBuildingCost: 50,
-  houseRoomsAmount: 5,
+  houseRoomsAmount: 1,
   baseWoodCollection: 25,
   baseFoodCollection: 50,
   woodCollectionDamage: 1,
   foodCollectionDamage: 10,
   manSpawnCost: 25,
-  foodEnergyConversionCoefficient: 1.5
+  foodEnergyConversionCoefficient: 1.5,
+  asteroidProbability: 0.9
 };
 
 //------------------------------------------------------------------------------
@@ -131,6 +132,10 @@ function timeLeft(timeout) {
         break;
       case "/lastactions":
         res.write(JSON.stringify({lastactions: timeLeft(timeout)}));
+        break;
+      case "/frasariulum":
+        res.write(users.frasariulum());
+        break;
       default:
         res.write("Error");
     }
