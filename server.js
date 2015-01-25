@@ -15,14 +15,14 @@ var Config = {
   port: 8080,
   worldWidth: 150,
   worldHeight: 50,
-  updateInterval: 2,
+  updateInterval: 5,
   verbose: true,
   floorLevel: 5,
   initialFood: 150,
   initialWood: 150,
   initialHouses: 2,
   foodConsumptionPerTurn: 2,
-  energyConsumptionPerTurn: 20.3,
+  energyConsumptionPerTurn: 0.3,
   initialGoats: 20,
   initialTrees: 20,
   houseBuildingCost: 50,
@@ -138,6 +138,9 @@ function timeLeft(timeout) {
         break;
       case "/history":
         res.write(JSON.stringify(theGame.ancientWorlds));
+        break;
+      case "/crossdomain.xml":
+        res.write('<?xml version="1.0"?><cross-domain-policy><allow-access-from domain="*"/></cross-domain-policy>');
         break;
       default:
         res.write("Error");

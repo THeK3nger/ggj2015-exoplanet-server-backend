@@ -29,7 +29,7 @@ function frasariulum() {
   var frasarium = [
     "%1$s told me to burn things!",
     "Why are you doing this to me, %1$s?",
-    "Every now and then, %1$s say something cool",
+    "Every now and then, %1$s says something cool",
     "My precioussss! Me and %1$s will never let you go!",
     "I can see my master %1$s",
     "Lavalicius",
