@@ -98,6 +98,9 @@ var CreateGame = function(config) {
       var strJson = JSON.stringify(ancientWorlds);
       fs.writeFileSync("ancientworlds.json", strJson);
       logged = true;
+      setTimeout(function() {
+        process.exit();
+      }, 5*1000);
     }
   };
 
